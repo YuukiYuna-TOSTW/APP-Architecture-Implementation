@@ -22,16 +22,24 @@ class AuthApiClient {
   Future<Result<LoginResponse>> login(LoginRequest loginRequest) async {
     final client = _clientFactory();
     try {
+      print('Sending login request to $_host:$_port/login');
+      print('Request body: ${jsonEncode(loginRequest)}');
+
       final request = await client.post(_host, _port, '/login');
       request.write(jsonEncode(loginRequest));
       final response = await request.close();
+
+      print('Response status: ${response.statusCode}');
+      final responseBody = await response.transform(utf8.decoder).join();
+      print('Response body: $responseBody');
+
       if (response.statusCode == 200) {
-        final stringData = await response.transform(utf8.decoder).join();
-        return Result.ok(LoginResponse.fromJson(jsonDecode(stringData)));
+        return Result.ok(LoginResponse.fromJson(jsonDecode(responseBody)));
       } else {
         return const Result.error(HttpException("Login error"));
       }
     } on Exception catch (error) {
+      print('Login error: $error');
       return Result.error(error);
     } finally {
       client.close();
